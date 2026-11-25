@@ -582,9 +582,15 @@ def generate_keys_header(
         "EN", "ES", "FR", "DE", "CS", "PT", "RU", "SV", "RO", "CA", "UK",
         "BE", "IT", "PL", "FI", "DA", "NL", "TR", "KK", "HU", "LT", "SI",
     ]
-    lines.append("// V1 language.bin migration table (frozen enum order from 2f969a9)")
+    # Fork change: languages removed from this build keep their slot as
+    # Language::_COUNT so old on-disk indices never shift onto a different
+    # language; a migration reader must treat _COUNT as "removed -> EN".
+    lines.append("// V1 language.bin migration table (frozen enum order from 2f969a9;")
+    lines.append("// languages not built into this fork appear as Language::_COUNT)")
     lines.append("constexpr Language V1_LANGUAGES[] = {")
-    lines.append("    " + ", ".join(f"Language::{c}" for c in v1_codes) + ",")
+    lines.append(
+        "    " + ", ".join(f"Language::{c}" if c in languages else "Language::_COUNT" for c in v1_codes) + ","
+    )
     lines.append("};")
     lines.append(
         f"constexpr uint8_t V1_LANGUAGE_COUNT = {len(v1_codes)};"

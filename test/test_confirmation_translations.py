@@ -9,12 +9,11 @@ from gen_i18n import parse_yaml_file
 
 
 class ConfirmationTranslationsTest(unittest.TestCase):
-    def test_spanish_questions_include_both_marks(self):
-        values = parse_yaml_file(str(ROOT / "lib/I18n/translations/spanish.yaml"))
+    def test_japanese_questions_use_fullwidth_mark(self):
+        values = parse_yaml_file(str(ROOT / "lib/I18n/translations/japanese.yaml"))
         for key in ("STR_DELETE_ITEM_CONFIRM", "STR_SET_SLEEP_COVER_CONFIRM"):
             with self.subTest(key=key):
-                self.assertTrue(values[key].startswith("¿"))
-                self.assertTrue(values[key].endswith("?"))
+                self.assertTrue(values[key].endswith("？"))
 
     def test_all_locales_have_explicit_confirmation_headings(self):
         for path in (ROOT / "lib/I18n/translations").glob("*.yaml"):
@@ -25,18 +24,19 @@ class ConfirmationTranslationsTest(unittest.TestCase):
                     self.assertEqual(values[key], values[key].strip())
 
     def test_partial_locales_do_not_freeze_english_button_labels(self):
-        for language in ("danish", "dutch", "finnish", "romanian"):
+        for language in ("japanese", "chinese_simplified", "chinese_traditional"):
             values = parse_yaml_file(str(ROOT / f"lib/I18n/translations/{language}.yaml"))
             with self.subTest(language=language):
                 self.assertNotEqual(values["STR_SET_SLEEP_COVER_CONFIRM"], "Set Cover?")
                 self.assertNotEqual(values["STR_DELETE_ITEM_CONFIRM"], "Delete?")
 
-    def test_persian_questions_use_native_punctuation(self):
-        values = parse_yaml_file(str(ROOT / "lib/I18n/translations/persian.yaml"))
-        for key in ("STR_DELETE_ITEM_CONFIRM", "STR_SET_SLEEP_COVER_CONFIRM"):
-            with self.subTest(key=key):
-                self.assertTrue(values[key].endswith("؟"))
-                self.assertNotIn("?", values[key])
+    def test_chinese_questions_use_fullwidth_mark(self):
+        for name in ("chinese_simplified", "chinese_traditional"):
+            values = parse_yaml_file(str(ROOT / f"lib/I18n/translations/{name}.yaml"))
+            for key in ("STR_DELETE_ITEM_CONFIRM", "STR_SET_SLEEP_COVER_CONFIRM"):
+                with self.subTest(language=name, key=key):
+                    self.assertTrue(values[key].endswith("？"))
+                    self.assertNotIn("?", values[key])
 
     def test_callers_use_complete_question_keys(self):
         for filename, key in (
