@@ -16,6 +16,11 @@
 #   styles:      Map of style name -> font source
 #                  path: relative to lib/EpdFont (for committed fonts)
 #                  url:  download URL (for fonts not in the repo)
+#   fallback:    (optional) Map of style name -> font source, same shape
+#                as styles. fontconvert_sdcard.py draws a glyph from the
+#                fallback face only when the primary face lacks it, so a
+#                family can merge a supplement font's missing glyphs
+#                into its .cpfont output. Default: NotoSans-Regular.
 #
 # Variable fonts:
 #   Some fonts (Bitter, Inter, Alegreya) are distributed as variable fonts.
@@ -424,3 +429,50 @@ families:
     styles:
       regular: {url: "https://raw.githubusercontent.com/fonts-archive/MaruBuri/977eeff68d1d40bcef341f09c1f56cce1903bb8a/MaruBuri-SemiBold.otf"}
       bold:    {url: "https://raw.githubusercontent.com/fonts-archive/MaruBuri/977eeff68d1d40bcef341f09c1f56cce1903bb8a/MaruBuri-Bold.otf"}
+
+  # ── Fork default: Noto Sans JP (docs/SHIFT_LEFT.md R2) ──
+  # One family covers all five shipped languages: Latin (en/id), kana and
+  # CJK Unified Ideographs (ja, zh-Hans, zh-Hant). Static instances are
+  # built by scripts/build_noto_sans_jp_subsets.py from the official
+  # Google Fonts variable font; license: OFL.txt beside the source font.
+  # Glyph fallback: Noto Sans JP lacks 3,333 codepoints of the simplified
+  # Chinese repertoire (GB2312 + TGH 2013 + this fork's zh YAMLs/samples),
+  # e.g. 这/简/认. The fallback below merges the Noto Sans SC supplement
+  # (scripts/build_noto_sans_sc_supplement.py — only the glyphs JP lacks)
+  # into this family's .cpfont files: the converter takes a glyph from
+  # the fallback face only when the JP face has none, so JP remains the
+  # primary font and no extra font is loaded or paged on device. The
+  # intervals add the blocks the supplement lives in beyond cjk/latin-ext
+  # (Greek/Cyrillic/symbols are GB2312 symbol rows; Ext-A and Bopomofo
+  # carry the remaining supplement codepoints; BMP only — the .cpfont
+  # pipeline is BMP-scoped like the JP subset itself).
+  - name: NotoSansJP
+    description: "Noto Sans JP - fork default for Japanese, Chinese (Simplified/Traditional), English and Indonesian; glyphs JP lacks are supplemented from a merged Noto Sans SC + KR supplement (Simplified Chinese, Hangul)"
+    scripts: [cjk, latin, hangul]
+    intervals: cjk,latin-ext,greek,cyrillic,symbols,(0x2312-0x2312),(0x2460-0x24FF),(0x3100-0x312F),(0x3220-0x3229),(0x3400-0x4DBF),hangul
+    sizes: [8, 10, 12, 14, 16, 18]
+    styles:
+      regular: {path: "builtinFonts/source/NotoSansJP/NotoSansJP-Regular.ttf"}
+      bold:    {path: "builtinFonts/source/NotoSansJP/NotoSansJP-Bold.ttf"}
+    fallback:
+      regular: {path: "builtinFonts/source/NotoSansSCKR/NotoSansSCKR-Regular.ttf"}
+      bold:    {path: "builtinFonts/source/NotoSansSCKR/NotoSansSCKR-Bold.ttf"}
+
+  # ── Fork supplement: Noto Sans SC, JP-missing glyphs only ──
+  # Holds ONLY the 3,333 codepoints Noto Sans JP lacks (see
+  # supplement_codepoints.txt beside the sources). Its real job is the
+  # fallback role for the NotoSansJP family above; it is registered so
+  # the manifest lists it and the files ship with the font release.
+  # Do NOT select it as the main reading font — common characters are
+  # deliberately absent (they come from Noto Sans JP). Its intervals
+  # omit latin-ext on purpose: the supplement's few Latin-Extended
+  # glyphs (pinyin ā/ē/ě…, GB2312 row 8) are delivered through the
+  # NotoSansJP merge above, whose intervals do include latin-ext.
+  - name: NotoSansSCSupplement
+    description: "Noto Sans SC supplement - ONLY the simplified-Chinese glyphs Noto Sans JP lacks (fallback for NotoSansJP; not a standalone font)"
+    scripts: [cjk]
+    intervals: cjk,greek,cyrillic,symbols,(0x2312-0x2312),(0x2460-0x24FF),(0x3100-0x312F),(0x3220-0x3229),(0x3400-0x4DBF)
+    sizes: [12, 14, 16, 18]
+    styles:
+      regular: {path: "builtinFonts/source/NotoSansSC/NotoSansSC-Regular.ttf"}
+      bold:    {path: "builtinFonts/source/NotoSansSC/NotoSansSC-Bold.ttf"}
