@@ -1,4 +1,15 @@
-# CrossPoint Reader
+# CrossPoint Reader — CrossPoint-DrKaiVer
+
+> **Fork note (CrossPoint-DrKaiVer, 5-language / Noto Sans JP build):** This
+> fork ships UI languages ja / en / zh-Hans / zh-Hant / id only, uses Noto Sans
+> JP as the unified font (OFL, SD-card subsets at 8/10/12/14/16/18pt, with
+> Simplified-Chinese and Hangul supplement glyphs), reads txt / md / epub /
+> pdf (Markdown and PDF are new here; PDF is text-extraction only), keeps
+> caches on the SD card under `/.crosspoint/cache` with an LRU + 64 MiB
+> default cap, and adds OS backup/restore to SD.
+> Details: `docs/FORK_CHANGES.md`, test plan: `docs/SHIFT_LEFT.md`.
+> Based on upstream commit `8503b7f`.
+
 
 [![Fund contributors](https://img.shields.io/badge/%F0%9F%91%91_Fund_contributors-royalty.dev-BB953A?style=for-the-badge&labelColor=1a1a1a)](https://app.royalty.dev/crosspoint-reader/crosspoint-reader)
 

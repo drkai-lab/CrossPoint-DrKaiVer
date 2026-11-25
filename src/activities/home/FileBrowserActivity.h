@@ -16,6 +16,10 @@ class FileBrowserActivity final : public UiListActivity {
   // File actions
   bool removeDirFile(const std::string& fullPath);
   void showEntryActions();
+  // Sort order (lib/FileSort): re-orders `files`/`fileModifiedTimes` in
+  // place from the persisted SETTINGS.fileSortKey/fileSortDirection.
+  void applyFileSort();
+  void showSortOptions();
   void startRename();
   void renameSelectedFile(const std::string& oldPath, const std::string& oldEntry, const std::string& newStem,
                           const std::string& extension);
@@ -26,6 +30,10 @@ class FileBrowserActivity final : public UiListActivity {
   // Files state
   std::string basepath = "/";
   std::vector<std::string> files;
+  // Parallel to `files`: HalFile::modificationTime() per entry (FAT packed
+  // date/time, 0 = none reported), captured during the same directory pass
+  // so date sorting needs no second SD walk.
+  std::vector<uint32_t> fileModifiedTimes;
   std::unique_ptr<char[]> fileNameBuffer;
   OptionPopup optionPopup;
 

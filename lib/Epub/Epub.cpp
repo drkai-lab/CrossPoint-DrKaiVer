@@ -8,6 +8,7 @@
 #include <JpegToBmpConverter.h>
 #include <Logging.h>
 #include <Memory.h>
+#include <Pdf.h>
 #include <PngToBmpConverter.h>
 #include <Txt.h>
 #include <Utf8.h>
@@ -476,6 +477,22 @@ bool Epub::load(const bool buildIfMissing, const bool skipLoadingCss) {
 
   // Try to load existing cache first
   if (bookMetadataCache->load()) {
+    if (Pdf::isPdf(filepath)) {
+      if (!Pdf::validateCache(filepath, cachePath)) {
+        LOG_DBG("EBP", "PDF cache invalid or outdated: %s", filepath.c_str());
+        if (!buildIfMissing) {
+          return false;
+        }
+        bookMetadataCache = makeUniqueNoThrow<BookMetadataCache>(cachePath);
+        if (!bookMetadataCache) {
+          LOG_ERR("EBP", "OOM: PDF metadata cache");
+          return false;
+        }
+        return Pdf::buildPdfCache(filepath, cachePath, bookMetadataCache);
+      }
+      LOG_DBG("EBP", "Loaded PDF from cache: %s", filepath.c_str());
+      return true;
+    }
     if (Txt::isTxtOrMd(filepath)) {
       if (!Txt::validateCache(filepath, cachePath, bookMetadataCache->getCumulativeSize(0))) {
         LOG_DBG("EBP", "TXT/MD cache invalid or outdated: %s", filepath.c_str());
@@ -545,6 +562,10 @@ bool Epub::load(const bool buildIfMissing, const bool skipLoadingCss) {
   // If we didn't load from cache above and we aren't allowed to build, fail now
   if (!buildIfMissing) {
     return false;
+  }
+
+  if (Pdf::isPdf(filepath)) {
+    return Pdf::buildPdfCache(filepath, cachePath, bookMetadataCache);
   }
 
   if (Txt::isTxtOrMd(filepath)) {
@@ -655,7 +676,7 @@ bool Epub::loadMetadata(std::string& title, std::string& author) {
   title.clear();
   author.clear();
 
-  if (Txt::isTxtOrMd(filepath)) {
+  if (Txt::isTxtOrMd(filepath) || Pdf::isPdf(filepath)) {
     title = utf8ComposeNfc(FsHelpers::getFileNameWithoutExtension(filepath));
     return true;
   }
@@ -1124,6 +1145,10 @@ bool Epub::readItemContentsToStream(const std::string& itemHref, Print& out, con
     return false;
   }
 
+  if (Pdf::isPdf(filepath)) {
+    return Pdf::streamPdfToHtml(cachePath, out);
+  }
+
   if (Txt::isTxtOrMd(filepath)) {
     return Txt::streamTxtToHtml(filepath, out);
   }
@@ -1161,6 +1186,17 @@ bool Epub::extractItemToFile(const std::string& itemHref, const std::string& des
 }
 
 bool Epub::getItemSize(const std::string& itemHref, size_t* size) const {
+  if (Pdf::isPdf(filepath)) {
+    if (Pdf::extractedTextSize(cachePath, size)) {
+      return true;
+    }
+    HalFile f;
+    if (Storage.openFileForRead("EBP", filepath, f)) {
+      if (size) *size = f.size();
+      return true;
+    }
+    return false;
+  }
   if (Txt::isTxtOrMd(filepath)) {
     HalFile f;
     if (Storage.openFileForRead("EBP", filepath, f)) {

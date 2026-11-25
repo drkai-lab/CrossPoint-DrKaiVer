@@ -55,12 +55,13 @@ TEST(LibraryBookFileTest, AcceptsBookFilesTheWalkLists) {
   EXPECT_TRUE(isLibraryBookFile("/a/b/c/readme.md"));
   EXPECT_TRUE(isLibraryBookFile("/Comics/issue.xtc"));
   EXPECT_TRUE(isLibraryBookFile("/Comics/issue.xtch"));
+  // Fork: PDF is a supported book format (docs/SHIFT_LEFT.md R3d).
+  EXPECT_TRUE(isLibraryBookFile("/Books/book.pdf"));
   EXPECT_TRUE(isLibraryBookFile("/Books/./book.epub"));
 }
 
 TEST(LibraryBookFileTest, RejectsOtherFilesAndHiddenNames) {
   EXPECT_FALSE(isLibraryBookFile(""));
-  EXPECT_FALSE(isLibraryBookFile("/Books/book.pdf"));
   EXPECT_FALSE(isLibraryBookFile("/Books/book.epub.part"));
   EXPECT_FALSE(isLibraryBookFile("/.crosspoint/library.dirty"));
   EXPECT_FALSE(isLibraryBookFile("/.crosspoint/plugins/foo/README.md"));

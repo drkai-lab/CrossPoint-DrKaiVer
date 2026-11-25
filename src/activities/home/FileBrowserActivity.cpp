@@ -1,5 +1,6 @@
 #include "FileBrowserActivity.h"
 
+#include <FileSort.h>
 #include <FsHelpers.h>
 #include <GfxRenderer.h>
 #include <HalStorage.h>
@@ -90,6 +91,7 @@ FileBrowserActivity::FileBrowserActivity(GfxRenderer& renderer, MappedInputManag
 
 void FileBrowserActivity::loadFiles() {
   files.clear();
+  fileModifiedTimes.clear();
   prewarmedStart = -1;  // new folder contents: re-prewarm the visible window
 
   auto root = Storage.open(basepath.c_str());
@@ -113,6 +115,7 @@ void FileBrowserActivity::loadFiles() {
   for (auto file = root.openNextFile(); file; file = root.openNextFile()) ++entryCount;
   root.rewindDirectory();
   files.reserve(entryCount);
+  fileModifiedTimes.reserve(entryCount);
 
   for (auto file = root.openNextFile(); file; file = root.openNextFile()) {
     file.getName(fileNameBuffer.get(), NAME_BUFFER_SIZE);
@@ -121,24 +124,90 @@ void FileBrowserActivity::loadFiles() {
         strcmp(fileNameBuffer.get(), "System Volume Information") == 0) {
       continue;
     }
+    // FAT modification time from the same pass (packed date/time, 0 when
+    // the filesystem reports none); the date sort key reads it back from
+    // the parallel vector instead of re-walking the directory.
+    const uint32_t modifiedTime = file.modificationTime();
 
     if (isDirectory) {
       files.emplace_back(std::string(fileNameBuffer.get()) + "/");
+      fileModifiedTimes.push_back(modifiedTime);
     } else {
       std::string_view filename{fileNameBuffer.get()};
       if (mode == Mode::PickFirmware) {
         // Firmware picker: only show .bin files.
         if (FsHelpers::checkFileExtension(filename, ".bin")) {
           files.emplace_back(filename);
+          fileModifiedTimes.push_back(modifiedTime);
         }
       } else if (FsHelpers::hasReflowableBookExtension(filename) || FsHelpers::hasXtcExtension(filename) ||
                  FsHelpers::hasImageExtension(filename)) {
         files.emplace_back(filename);
+        fileModifiedTimes.push_back(modifiedTime);
       }
     }
   }
   root.close();
-  FsHelpers::sortFileList(files);
+  applyFileSort();
+}
+
+void FileBrowserActivity::applyFileSort() {
+  if (fileModifiedTimes.size() != files.size()) {
+    // Defensive only: loadFiles keeps the two vectors in lockstep.
+    fileModifiedTimes.assign(files.size(), 0);
+  }
+  std::vector<FileSort::Entry> entries;
+  entries.reserve(files.size());
+  for (size_t i = 0; i < files.size(); i++) {
+    entries.push_back(FileSort::Entry{files[i], fileModifiedTimes[i], !files[i].empty() && files[i].back() == '/'});
+  }
+  FileSort::sortEntries(entries, FileSort::keyFromStored(SETTINGS.fileSortKey),
+                        FileSort::directionFromStored(SETTINGS.fileSortDirection));
+  for (size_t i = 0; i < files.size(); i++) {
+    files[i] = entries[i].name;
+    fileModifiedTimes[i] = entries[i].modificationTime;
+  }
+}
+
+void FileBrowserActivity::showSortOptions() {
+  // One flat list of key x direction, in the popup's existing style; the
+  // current selection is the highlighted row. Labels are composed from
+  // translated parts ("Date: Descending") so no combined string keys are
+  // needed per combination.
+  static constexpr StrId KEY_IDS[] = {StrId::STR_SORT_NAME, StrId::STR_SORT_DATE, StrId::STR_SORT_TYPE};
+  static constexpr StrId DIRECTION_IDS[] = {StrId::STR_SORT_ASCENDING, StrId::STR_SORT_DESCENDING};
+  std::vector<std::string> options;
+  options.reserve(6);
+  for (const StrId keyId : KEY_IDS) {
+    for (const StrId directionId : DIRECTION_IDS) {
+      // tr() is a macro over a literal key name; variable keys go through
+      // I18N.get() directly (the OptionPopup pattern).
+      options.push_back(std::string(I18N.get(keyId)) + ": " + I18N.get(directionId));
+    }
+  }
+  const int current = static_cast<int>(FileSort::keyFromStored(SETTINGS.fileSortKey)) * 2 +
+                      static_cast<int>(FileSort::directionFromStored(SETTINGS.fileSortDirection));
+  optionPopup.show(StrId::STR_SORT_BY, options, current, [this](const int index) {
+    if (index < 0 || index >= 6) return;
+    SETTINGS.fileSortKey = static_cast<uint8_t>(index / 2);
+    SETTINGS.fileSortDirection = static_cast<uint8_t>(index % 2);
+    if (!SETTINGS.saveToFile()) {
+      LOG_ERR("FileBrowser", "Failed to save sort settings");
+    }
+    // Keep the highlight on the same entry across the re-order.
+    const std::string selectedEntry =
+        (nav.selected >= 0 && nav.selected < listCount()) ? files[nav.selected] : std::string();
+    {
+      RenderLock lock(*this);
+      applyFileSort();
+      if (!selectedEntry.empty()) {
+        nav.selected = static_cast<int>(findEntry(selectedEntry));
+        nav.follow(listCount());
+      }
+    }
+    requestUpdate(true);
+  });
+  requestUpdate();
 }
 
 // fui::ListProps::rowProvider — formats row `index` from files[index] into the
@@ -229,6 +298,7 @@ void FileBrowserActivity::onEnter() {
 void FileBrowserActivity::onExit() {
   Activity::onExit();
   files.clear();
+  fileModifiedTimes.clear();
   fileNameBuffer.reset();
 }
 
@@ -382,16 +452,21 @@ void FileBrowserActivity::showEntryActions() {
   }
 
   const bool isDirectory = files[nav.selected].back() == '/';
-  static constexpr StrId FILE_OPTIONS[] = {StrId::STR_OPEN, StrId::STR_DELETE, StrId::STR_RENAME};
-  static constexpr StrId DIRECTORY_OPTIONS[] = {StrId::STR_OPEN, StrId::STR_DELETE};
-  optionPopup.show(StrId::STR_FILENAME, isDirectory ? DIRECTORY_OPTIONS : FILE_OPTIONS, isDirectory ? 2 : 3, 0,
-                   [this](const int index) {
+  // "Sort by" rides at the end of the existing long-press actions popup:
+  // it is the browser's only options surface, and it stays reachable for
+  // both files and folders.
+  static constexpr StrId FILE_OPTIONS[] = {StrId::STR_OPEN, StrId::STR_DELETE, StrId::STR_RENAME, StrId::STR_SORT_BY};
+  static constexpr StrId DIRECTORY_OPTIONS[] = {StrId::STR_OPEN, StrId::STR_DELETE, StrId::STR_SORT_BY};
+  optionPopup.show(StrId::STR_FILENAME, isDirectory ? DIRECTORY_OPTIONS : FILE_OPTIONS, isDirectory ? 3 : 4, 0,
+                   [this, isDirectory](const int index) {
                      if (index == 0) {
                        activateSelected();
                      } else if (index == 1) {
                        deleteSelected();
-                     } else if (index == 2) {
+                     } else if (index == 2 && !isDirectory) {
                        startRename();
+                     } else {
+                       showSortOptions();
                      }
                    });
   requestUpdate();
