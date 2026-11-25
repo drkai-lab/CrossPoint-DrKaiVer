@@ -12,7 +12,7 @@ class TranslationSpacingTest(unittest.TestCase):
     def test_localized_string_boundaries_match_english(self):
         directory = ROOT / "lib/I18n/translations"
         english = parse_yaml_file(str(directory / "english.yaml"))
-        for language in ("spanish", "catalan", "valencian"):
+        for language in ("japanese", "chinese_simplified", "chinese_traditional", "indonesia"):
             translated = parse_yaml_file(str(directory / f"{language}.yaml"))
             for key, source in english.items():
                 if not key.startswith("STR_") or key not in translated:

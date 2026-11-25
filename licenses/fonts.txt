@@ -655,8 +655,7 @@ Full terms: see the shared OFL 1.1 section at the end of this file.
 ========================================================================
 NotoSansBengali
 Source: https://raw.githubusercontent.com/google/fonts/main/ofl/notosansbengali/OFL.txt
-========================================================================
-
+=================================================================
 Copyright 2022 The Noto Project Authors (https://github.com/notofonts/bengali)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
@@ -910,6 +909,48 @@ This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 https://scripts.sil.org/OFL
 
+=======
+NotoSansJP
+Source: lib/EpdFont/builtinFonts/source/NotoSansJP
+========================================================================
+
+Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is also available with a FAQ at:
+https://scripts.sil.org/OFL
+
+
+Full terms: see the shared OFL 1.1 section at the end of this file.
+
+========================================================================
+NotoSansSCSupplement
+Source: lib/EpdFont/builtinFonts/source/NotoSansSC
+========================================================================
+
+Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is also available with a FAQ at:
+https://scripts.sil.org/OFL
+
+
+Full terms: see the shared OFL 1.1 section at the end of this file.
+
+========================================================================
+NotoSansSCKRSupplement
+Source: lib/EpdFont/builtinFonts/source/NotoSansSCKR
+========================================================================
+
+Merged fallback face: the NotoSansSCSupplement above plus a Noto Sans KR
+supplement (only the glyphs Noto Sans JP and the SC supplement lack,
+mostly Hangul). Noto Sans KR: Copyright Google.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is also available with a FAQ at:
+https://scripts.sil.org/OFL
+
+
 Full terms: see the shared OFL 1.1 section at the end of this file.
 
 ========================================================================
@@ -1002,3 +1043,4 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+

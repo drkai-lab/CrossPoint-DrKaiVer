@@ -1,3 +1,4 @@
+#include <Pdf.h>
 #include <Arduino.h>
 #include <BlePageTurner.h>
 #include <BoardConfig.h>
@@ -775,6 +776,10 @@ void setup() {
     SETTINGS.readerMenuStyle = CrossPointSettings::READER_MENU_TOOLBAR;
   }
   SETTINGS.loadFromFile();
+  // Fork: apply the user's SD file-cache cap to PDF text extraction
+  // (docs/SHIFT_LEFT.md R4). cacheRoot is honoured by FileCache users
+  // rooted there; the per-book caches keep the /.crosspoint convention.
+  Pdf::setCacheMaxBytes(static_cast<uint64_t>(SETTINGS.cacheMaxMiB) * 1024 * 1024);
   // Push the saved timezone's POSIX rule into the clock (migrating the legacy
   // UTC-offset setting on first boot after the update).
   timezones::applyToClock();

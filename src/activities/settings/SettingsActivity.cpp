@@ -27,6 +27,8 @@
 #include "LanguageSelectActivity.h"
 #include "MappedInputManager.h"
 #include "OpdsServerListActivity.h"
+#include "OsBackupActivity.h"
+#include "OsRestoreActivity.h"
 #include "OtaUpdateActivity.h"
 #include "SdCardFontSystem.h"
 #include "SdFirmwareUpdateActivity.h"
@@ -209,6 +211,10 @@ void SettingsActivity::rebuildSettings() {
   if (!BoardConfig::isPicco()) {
     addAction(SettingsSection::General, StrId::STR_CHECK_UPDATES, SettingAction::CheckForUpdates);
     addAction(SettingsSection::General, StrId::STR_SD_FIRMWARE_UPDATE, SettingAction::SdFirmwareUpdate);
+    // OS backup/restore needs the second OTA slot to restore into, so it
+    // shares the Picco exclusion with the other firmware paths.
+    addAction(SettingsSection::General, StrId::STR_OS_BACKUP, SettingAction::OsBackup);
+    addAction(SettingsSection::General, StrId::STR_OS_RESTORE, SettingAction::OsRestore);
   }
   addAction(SettingsSection::General, StrId::STR_ABOUT, SettingAction::About);
   rebuildRowItems();
@@ -470,6 +476,12 @@ void SettingsActivity::toggleSelectedSetting() {
         break;
       case SettingAction::SdFirmwareUpdate:
         startActivityForResult(std::make_unique<SdFirmwareUpdateActivity>(renderer, mappedInput), resultHandler);
+        break;
+      case SettingAction::OsBackup:
+        startActivityForResult(std::make_unique<OsBackupActivity>(renderer, mappedInput), resultHandler);
+        break;
+      case SettingAction::OsRestore:
+        startActivityForResult(std::make_unique<OsRestoreActivity>(renderer, mappedInput), resultHandler);
         break;
       case SettingAction::DownloadFonts:
         startActivityForResult(std::make_unique<FontDownloadActivity>(renderer, mappedInput),

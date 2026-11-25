@@ -342,6 +342,23 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   static constexpr uint8_t SCREEN_MARGIN_MAX = 40;
   static constexpr uint8_t SCREEN_MARGIN_STEP = 5;
   uint8_t screenMargin = SCREEN_MARGIN_MIN;
+  // SD file-cache location and size cap (fork feature, docs/SHIFT_LEFT.md R4).
+  // Persisted via category-less SettingInfo entries in SettingsList.cpp, so
+  // they stay out of the on-device Settings screen; editable via Web Settings.
+  char cacheRoot[64] = "/.crosspoint/cache";
+  uint8_t cacheMaxMiB = 64;
+  // File browser sort selection (fork feature, lib/FileSort). The stored
+  // values are FileSort::Key / FileSort::Direction ordinals; out-of-range
+  // values clamp to Name / Ascending in FileSort::keyFromStored /
+  // directionFromStored, so a corrupt settings file cannot select a
+  // phantom order. Persisted via SettingInfo entries in SettingsList.cpp.
+  uint8_t fileSortKey = 0;        // FileSort::Key::Name
+  uint8_t fileSortDirection = 0;  // FileSort::Direction::Ascending
+  // OS backup generations to keep on SD (fork feature, lib/OsBackup).
+  // After a successful backup, older generations under /.crosspoint/backup
+  // are pruned down to this count. Persisted via a SettingInfo entry in
+  // SettingsList.cpp (System category, also web-editable).
+  uint8_t osBackupKeep = 3;
   // OPDS download destination folder ("" = SD root). Global; edited from the
   // OPDS server list. Persisted via a category-less SettingInfo::String in
   // SettingsList.h, so it stays out of the on-device Settings screen.

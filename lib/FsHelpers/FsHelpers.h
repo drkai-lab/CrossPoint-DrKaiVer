@@ -66,6 +66,12 @@ inline bool hasTxtExtension(const String& fileName) {
 // Check for .md extension (case-insensitive)
 bool hasMarkdownExtension(std::string_view fileName);
 
+// Check for .pdf extension (case-insensitive)
+bool hasPdfExtension(std::string_view fileName);
+inline bool hasPdfExtension(const String& fileName) {
+  return hasPdfExtension(std::string_view{fileName.c_str(), fileName.length()});
+}
+
 bool hasReflowableBookExtension(std::string_view fileName);
 
 // Check for .css extension (case-insensitive)

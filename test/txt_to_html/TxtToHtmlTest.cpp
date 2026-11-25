@@ -49,9 +49,11 @@ TEST(TxtToHtmlTest, MidLineConsecutiveSpaces) {
 TEST(TxtToHtmlTest, PreservesCacheVersionTagsForBothFormats) {
   StringPrint out;
   ASSERT_TRUE(TxtToHtml::stream("test.MD", "text", out));
+  // Fork: .md now goes through the real Markdown converter (MD_CACHE_VERSION: 2),
+  // so plain text is wrapped in a paragraph. See test/markdown_to_html/.
   EXPECT_EQ(out.str,
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- MD_CACHE_VERSION: 1 -->\n"
-            "<!DOCTYPE html>\n<html>\n<head><title>test</title></head>\n<body>\ntext" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- MD_CACHE_VERSION: 2 -->\n"
+            "<!DOCTYPE html>\n<html>\n<head><title>test</title></head>\n<body>\n<p>text</p>\n" +
                 kFooter);
   EXPECT_NE(out.str.find(TxtToHtml::cacheVersionTag("test.MD")), std::string::npos);
   EXPECT_NE(convert("text").find(TxtToHtml::cacheVersionTag("test.txt")), std::string::npos);

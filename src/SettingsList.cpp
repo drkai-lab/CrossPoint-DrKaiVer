@@ -210,6 +210,19 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
                            StrId::STR_CAT_SYSTEM));
   emit(SettingInfo::Toggle(StrId::STR_SHOW_FILE_EXTENSIONS, &CrossPointSettings::showFileExtensions,
                            "showFileExtensions", StrId::STR_CAT_SYSTEM));
+  // File browser sort: also cycled from the browser's own "Sort by" popup;
+  // listed here so the choice is visible (and web-editable) like other
+  // System settings.
+  emit(SettingInfo::Enum(StrId::STR_SORT_BY, &CrossPointSettings::fileSortKey,
+                         {StrId::STR_SORT_NAME, StrId::STR_SORT_DATE, StrId::STR_SORT_TYPE}, "fileSortKey",
+                         StrId::STR_CAT_SYSTEM));
+  emit(SettingInfo::Enum(StrId::STR_SORT_DIRECTION, &CrossPointSettings::fileSortDirection,
+                         {StrId::STR_SORT_ASCENDING, StrId::STR_SORT_DESCENDING}, "fileSortDirection",
+                         StrId::STR_CAT_SYSTEM));
+  // OS backup retention: how many generations under /.crosspoint/backup a
+  // new backup keeps (older ones are pruned). See src/OsBackupService.
+  emit(SettingInfo::Value(StrId::STR_OS_BACKUP_KEEP, &CrossPointSettings::osBackupKeep, {1, 10, 1}, "osBackupKeep",
+                          StrId::STR_CAT_SYSTEM));
   emit(SettingInfo::Toggle(StrId::STR_LIBRARY_USE_METADATA, &CrossPointSettings::libraryUseMetadata,
                            "libraryUseMetadata", StrId::STR_CAT_SYSTEM));
   emit(SettingInfo::Toggle(StrId::STR_LIBRARY_RECENT_OPENED_ONLY, &CrossPointSettings::libraryRecentOpenedOnly,
@@ -221,6 +234,10 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
 
   // OPDS download folder: persisted + web-exposed, but category-less so it
   // is hidden from the on-device Settings screen (edited via OPDS UI).
+  // SD file cache: persisted + web-exposed, category-less (hidden on device).
+  emit(SettingInfo::String(StrId::STR_CACHE_ROOT, &SETTINGS.cacheRoot[0], sizeof(SETTINGS.cacheRoot), "cacheRoot"));
+  emit(SettingInfo::Value(StrId::STR_CACHE_MAX_MB, &CrossPointSettings::cacheMaxMiB, {8, 248, 8}, "cacheMaxMiB"));
+
   emit(SettingInfo::String(StrId::STR_OPDS_DOWNLOAD_FOLDER, &SETTINGS.opdsDownloadFolder[0],
                            sizeof(SETTINGS.opdsDownloadFolder), "opdsDownloadFolder"));
   // OPDS download filename format: persisted + web-exposed, category-less so it
